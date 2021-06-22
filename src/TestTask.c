@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
     {
         printf("\nUtility for changing data inside files\n");
         printf("Usage:\t%s [path] [search word] [new word]\n\n", argv[0]);
+        return 0;
     }
 
     DIR *d;
@@ -31,14 +32,14 @@ int main(int argc, char *argv[])
     char logFileName[16];
     time_t t = time(NULL);
     struct tm* aTm = localtime(&t);
-    int numbStr;
+    int numbStr, chkCmpr;
+    char buffer[BUFFER_SIZE];
+    char cmpr_buffer[BUFFER_SIZE];
+    struct dirent *dir;
 
     snprintf(path, sizeof path, "%s", argv[1]);
     snprintf(logFileName, sizeof logFileName, "%04d%02d%02d-%02d%02d%02d", aTm->tm_year+1900, aTm->tm_mon+1, aTm->tm_mday, aTm->tm_hour, aTm->tm_min, aTm->tm_sec);
     strcat(logFileName, ".log");
-
-    char buffer[BUFFER_SIZE];
-    struct dirent *dir;
 
     if (argv[1] && *argv[1] && argv[1][strlen(argv[1]) - 1] == '/')
         path[strlen(path) - 1] = 0;
@@ -51,12 +52,18 @@ int main(int argc, char *argv[])
         while ((dir = readdir(d)) != NULL) {
             snprintf(pathToFile, sizeof pathToFile, "%s/%s", path, dir->d_name);
             fPtr  = fopen(pathToFile, "r");
-            if (fPtr){   numbStr = 0;
+            if (fPtr){
+                numbStr = 0;
+                chkCmpr = 0;
                 fTemp = fopen("replace.tmp", "w"); 
                 while ((fgets(buffer, BUFFER_SIZE, fPtr)) != NULL)
                 {   numbStr++;
+                    strcpy(cmpr_buffer, buffer);
                     replaceAll(buffer, argv[2], argv[3], pathToFile, fLog, numbStr);
                     fputs(buffer, fTemp);
+                    if (strcmp(buffer, cmpr_buffer)){
+                        chkCmpr++;
+                    }
                 }
                 fclose(fPtr);
                 fclose(fTemp);
@@ -69,7 +76,7 @@ int main(int argc, char *argv[])
                 printf("Please check whether file exists and you have read/write privilege.\n");
 
                 fprintf(fLog, "\tUnable to open file: %s.\n", pathToFile);
-                fprintf(fLog, "\tPlease check whether file exists and you have read/write privilege.");
+                fprintf(fLog, "\tPlease check whether file exists and you have read/write privilege.\n");
             }
         }
         closedir(d);
@@ -120,6 +127,7 @@ void replaceAll(char *str, const char *oldWord, const char *newWord, char *path,
         strcat(str, newWord);
         strcat(str, temp + index + owlen);
 
+        printf("%s: %d:%d: \"%s\" -> \"%s\"\n", path, numbStr, index+1, oldWord, newWord);
         fprintf(fLog, "\t%s: %d:%d: \"%s\" -> \"%s\"\n", path, numbStr, index+1, oldWord, newWord);
     }
 }
