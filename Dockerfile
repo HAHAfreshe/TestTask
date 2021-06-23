@@ -11,4 +11,4 @@ RUN groupadd -r testgrp && useradd -r -g testgrp testusr
 USER testusr
 WORKDIR /app
 COPY --from=build /app/build/TestTask .
-ENTRYPOINT ["./TestTask"]
+ENTRYPOINT ["./TestTask"] 
